@@ -1,4 +1,4 @@
-(function() {
+(function () {
     var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
     window.requestAnimationFrame = requestAnimationFrame;
 })();
@@ -13,54 +13,60 @@ const keyActionMapping = {
 
 var canvas = document.getElementById("canvas"),
     ctx = canvas.getContext("2d"),
-    elemLeft = canvas.offsetLeft,
-    elemTop = canvas.offsetTop,
     width = 1000,
     height = 500,
-    goal = {
-        positions: [
-            [240, 180]
-        ],
-        width : 20,
-        height : 20,
-    }
-    walls = {
-        positions: [
-            [200, 200],
-            [220, 200],
-            [240, 200],
-            [260, 200],
-            [280, 200],
-        ],
-        width : 20,
-        height : 20,
-    },
+    leftFrameOffset = canvas.offsetLeft,
+    topFrameOffset = canvas.offsetTop,
     player = {
-      x : width / 2,
-      y : height - 5,
-      width : 20,
-      height : 20,
-      speed: 4,
-      velX: 0,
-      velY: 0,
-      jumping: false
+        x: width / 2,
+        y: height - 15,
+        width: 25,
+        height: 25,
+        speed: 4,
+        velX: 0,
+        velY: 0,
+        jumping: false,
+        ground: false
     },
     keys = {
         left: false,
-        right: false,        
+        right: false,
         up: false,
         down: false,
     },
     friction = 0.8,
     gravity = 0.3;
 
+var walls = [];
+
+// create frames
+walls.push({
+    x: 0,
+    y: 0,
+    width: 2,
+    height: height
+});
+walls.push({
+    x: 0,
+    y: height - 2,
+    width: width,
+    height: 50
+});
+walls.push({
+    x: width - 2,
+    y: 0,
+    width: 2,
+    height: height
+});
 
 canvas.width = width;
 canvas.height = height;
 
+// Player Functions
 const updatePlayerUpAction = () => {
-    if (!player.jumping) {
+    if (!player.jumping && player.ground) {
         player.jumping = true;
+        player.ground = false;
         player.velY = -player.speed * 2;
     }
 }
@@ -79,56 +85,6 @@ const updatePlayerleftAction = () => {
 
 const updatePlayerState = () => {
 
-    prevPlayerX = player.x;
-    prevPlayerY = player.y;
-       
-    player.velX *= friction;
-   
-    player.velY += gravity;
-  
-    player.x += player.velX;
-    player.y += player.velY;
-    
-    if (player.x >= width - player.width) {
-        player.x = width - player.width;
-    } else if (player.x <= 0) {
-        player.x = 0;
-    }
-  
-    if (player.y >= height - player.height){
-        player.y = height - player.height;
-        player.jumping = false;
-    }
-  
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = "red";
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-}
-
-const createWall = (xVal, yVal) => {
-    console.log(xVal, yVal);
-    // TODO:
-    // 1. frame the click within the "20 * 20 grid".
-    // 2. make sure that the square created is centered.
-    walls.positions.push([xVal, yVal]);
-}
-
-const updateWallState = () => {
-    walls.positions.forEach((position) => {
-        ctx.fillStyle = "black";
-        ctx.fillRect(position[0], position[1], walls.width, walls.height);
-    })
-}
-
-const updateGoalState = () => {
-    goal.positions.forEach((position) => {
-        ctx.fillStyle = "blue";
-        ctx.fillRect(position[0], position[1], walls.width, walls.height);
-    })
-}
-
-const update = () => {
-
     if (keys.up) {
         updatePlayerUpAction();
     }
@@ -139,11 +95,102 @@ const update = () => {
         updatePlayerleftAction();
     }
 
+    player.velX *= friction;
+    player.velY += gravity;
+
+    player.ground = false;
+    for (let wall of walls) {
+        
+        var dir = checkCollision(player, wall);
+
+        if (dir === "left" || dir === "right") {
+            player.velX = 0;
+            player.jumping = false;
+        } else if (dir === "bottom") {
+            player.ground = true;
+            player.jumping = false;
+        } else if (dir === "top") {
+            player.velY *= -1;
+        }
+
+    }
+    
+    if (player.ground){
+         player.velY = 0;
+    }
+    
+    player.x += player.velX;
+    player.y += player.velY;
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = "red";
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+}
+
+// Wall Functions
+
+const createWall = (xVal, yVal, width, height) => {
+    walls.push({
+        x: offsetCenterPosition(xVal, width),
+        y: offsetCenterPosition(yVal, height),
+        width,
+        height
+    });
+    console.log(walls);
+}
+
+const updateWallState = () => {
+    walls.forEach((wall) => {
+        ctx.fillStyle = "black";
+        ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+    })
+}
+
+// Util
+checkCollision = (objectA, objectB) => {
+
+    let xDiff = getCenterPosition(objectA.x, objectA.width) - getCenterPosition(objectB.x, objectB.width),
+        yDiff = getCenterPosition(objectA.y, objectA.height) - getCenterPosition(objectB.y, objectB.height),
+        halfWidthCombined = (objectA.width / 2) + (objectB.width / 2),
+        halfHeightCombined = (objectA.height / 2) + (objectB.height / 2),
+        collisionDirection = null;
+
+    if (Math.abs(xDiff) < halfWidthCombined && Math.abs(yDiff) < halfHeightCombined) {
+        let offsetX = halfWidthCombined - Math.abs(xDiff),
+            offsetY = halfHeightCombined - Math.abs(yDiff);
+        if (offsetX >= offsetY) {
+            if (yDiff > 0) {
+                collisionDirection = "top";
+                objectA.y += offsetY;
+            } else {
+                collisionDirection = "bottom";
+                objectA.y -= offsetY;
+            }
+        } else {
+            if (xDiff > 0) {
+                collisionDirection = "left";
+                objectA.x += offsetX;
+            } else {
+                collisionDirection = "right";
+                objectA.x -= offsetX;
+            }
+        }
+    }
+    return collisionDirection;
+}
+
+const offsetCenterPosition = (x, xWidth) => (x - Math.floor(xWidth / 2));
+const getCenterPosition = (x, xWidth) => (x + Math.floor(xWidth / 2));
+
+
+// main update
+const update = () => {
     updatePlayerState();
     updateWallState();
-    updateGoalState();
     requestAnimationFrame(update);
 }
+
+// event listeners
 
 document.body.addEventListener("keydown", (e) => {
     keys[keyActionMapping[e.code]] = true;
@@ -154,12 +201,9 @@ document.body.addEventListener("keyup", (e) => {
 });
 
 document.body.addEventListener("click", (e) => {
-    var xVal = e.pageX - elemLeft;
-    var yVal = e.pageY - elemTop;
-    createWall(xVal, yVal);
+    createWall(e.pageX - leftFrameOffset, e.pageY - topFrameOffset, 25, 25);
 });
 
-
-window.addEventListener("load", () => {
+window.addEventListener("load", function () {
     update();
 });
