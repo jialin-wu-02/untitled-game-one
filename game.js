@@ -11,6 +11,13 @@ const keyActionMapping = {
     Space: "up"
 }
 
+const idleMainImg = new Image(),
+    jumpMainImg = new Image(),
+    deadMainImg = new Image();
+idleMainImg.src = 'assest/flat-boi/Idle.png';
+jumpMainImg.src = 'assest/flat-boi/Jump.png';
+deadMainImg.src = 'assest/flat-boi/Dead.png';
+
 var canvas = document.getElementById("canvas"),
     ctx = canvas.getContext("2d"),
     width = 1000,
@@ -20,8 +27,8 @@ var canvas = document.getElementById("canvas"),
     player = {
         x: width / 2,
         y: height - 15,
-        width: 25,
-        height: 25,
+        width: 50,
+        height: 50,
         speed: 4,
         velX: 0,
         velY: 0,
@@ -123,8 +130,9 @@ const updatePlayerState = () => {
     player.y += player.velY;
 
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = "red";
-    ctx.fillRect(player.x, player.y, player.width, player.height);
+    drawMain(player.x, player.y, player.width, player.height);
+    // ctx.fillStyle = "red";
+    // ctx.fillRect(player.x, player.y, player.width, player.height);
 }
 
 // Wall Functions
@@ -181,6 +189,20 @@ checkCollision = (objectA, objectB) => {
 
 const offsetCenterPosition = (x, xWidth) => (x - Math.floor(xWidth / 2));
 const getCenterPosition = (x, xWidth) => (x + Math.floor(xWidth / 2));
+
+// Drawing things
+const drawMain = (x, y, width, height) => {
+    if (player.ground) {
+        ctx.drawImage(idleMainImg, x, y, width, height);
+    }
+    else if (player.jumping) {
+        ctx.drawImage(jumpMainImg, x, y, width, height);
+    }
+    else {
+        // default idle
+        ctx.drawImage(idleMainImg, x, y, width, height);
+    }
+}
 
 
 // main update
