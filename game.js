@@ -15,10 +15,17 @@ const keyActionMapping = {
 
 const idleMainImg = new Image(),
     jumpMainImg = new Image(),
+    flipIdleMainImg = new Image(),
+    flipJumpMainImg = new Image(),
     deadMainImg = new Image();
 idleMainImg.src = 'assest/flat-boi/Idle.png';
 jumpMainImg.src = 'assest/flat-boi/Jump.png';
 deadMainImg.src = 'assest/flat-boi/Dead.png';
+
+flipIdleMainImg.src = 'assest/flat-boi/Idle_flip.png';
+flipJumpMainImg.src = 'assest/flat-boi/Jump_flip.png';
+
+
 
 let walk = [];
 let walkflip = [];
@@ -213,23 +220,27 @@ currentImage = idleMainImg;
 // Drawing things
 const drawMain = (x, y, width, height) => {
     walkpointer = walk;
-    if (player.facing == "left") {
+    idlepointer = idleMainImg;
+    jumppointer = jumpMainImg;
+    if (player.facing === "left") {
         // right as default
         walkpointer = walkflip;
+        idlepointer = flipIdleMainImg;
+        jumppointer = flipJumpMainImg;
     }
 
     if (player.ground && player.velX === 0) {
-        currentImage = idleMainImg;
-        ctx.drawImage(idleMainImg, x, y, width, height);
+        currentImage = idlepointer;
+        ctx.drawImage(idlepointer, x, y, width, height);
     } 
-    else if (player.ground && player.velX > 0) {
-        currentImage = walk[walktick];
-        ctx.drawImage(walk[walktick], x, y, width, height);
+    else if (player.ground && Math.abs(player.velX) > 0) {
+        currentImage = walkpointer[walktick];
+        ctx.drawImage(walkpointer[walktick], x, y, width, height);
         walktick =(walktick + 1) % 15;
     }
     else if (player.jumping) {
-        currentImage = jumpMainImg;
-        ctx.drawImage(jumpMainImg, x, y, width + 5, height);
+        currentImage = jumppointer;
+        ctx.drawImage(jumppointer, x, y, width + 5, height);
     }
     else {
         // default idle
