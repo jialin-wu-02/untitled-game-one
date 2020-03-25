@@ -21,12 +21,15 @@ jumpMainImg.src = 'assest/flat-boi/Jump.png';
 deadMainImg.src = 'assest/flat-boi/Dead.png';
 
 let walk = [];
+let walkflip = [];
 
 let walktick = 0; // cycle from 0 to 15. 
 
 for (let i = 1; i < 16; i++) {
     walk[i - 1] = new Image();
     walk[i - 1].src = 'assest/flat-boi/Walk_' + i + '.png';
+    walkflip[i - 1] = new Image();
+    walkflip[i - 1].src = 'assest/flat-boi/Walk_' + i + '_flip.png';
 }
 
 var canvas = document.getElementById("canvas"),
@@ -38,7 +41,7 @@ var canvas = document.getElementById("canvas"),
     player = {
         x: width / 2,
         y: height - 100,
-        width: 80,
+        width: 40,
         height: 80,
         speed: 4,
         velX: 0,
@@ -91,12 +94,14 @@ const updatePlayerUpAction = () => {
 }
 
 const updatePlayerRightAction = () => {
+    player.facing = "right";
     if (player.velX < player.speed) {
         player.velX++;
     }
 }
 
 const updatePlayerleftAction = () => {
+    player.facing = "left";
     if (player.velX > -player.speed) {
         player.velX--;
     }
@@ -207,6 +212,11 @@ currentImage = idleMainImg;
 
 // Drawing things
 const drawMain = (x, y, width, height) => {
+    walkpointer = walk;
+    if (player.facing == "left") {
+        // right as default
+        walkpointer = walkflip;
+    }
 
     if (player.ground && player.velX === 0) {
         currentImage = idleMainImg;
@@ -219,7 +229,7 @@ const drawMain = (x, y, width, height) => {
     }
     else if (player.jumping) {
         currentImage = jumpMainImg;
-        ctx.drawImage(jumpMainImg, x, y, width, height);
+        ctx.drawImage(jumpMainImg, x, y, width + 5, height);
     }
     else {
         // default idle
