@@ -11,12 +11,25 @@ const keyActionMapping = {
     Space: "up"
 }
 
+var framecount = 0;
+
+// load pictures
+
 const idleMainImg = new Image(),
     jumpMainImg = new Image(),
     deadMainImg = new Image();
 idleMainImg.src = 'assest/flat-boi/Idle.png';
 jumpMainImg.src = 'assest/flat-boi/Jump.png';
 deadMainImg.src = 'assest/flat-boi/Dead.png';
+
+let walk = [];
+
+let walktick = 0; // cycle from 0 to 15. 
+
+for (let i = 1; i < 16; i++) {
+    walk[i - 1] = new Image();
+    walk[i - 1].src = 'assest/flat-boi/Walk_' + i + '.png';
+}
 
 var canvas = document.getElementById("canvas"),
     ctx = canvas.getContext("2d"),
@@ -26,14 +39,15 @@ var canvas = document.getElementById("canvas"),
     topFrameOffset = canvas.offsetTop,
     player = {
         x: width / 2,
-        y: height - 15,
-        width: 50,
-        height: 50,
+        y: height - 100,
+        width: 80,
+        height: 80,
         speed: 4,
         velX: 0,
         velY: 0,
         jumping: false,
-        ground: false
+        ground: false,
+        facing: "right", // facing can have right or left.
     },
     keys = {
         left: false,
@@ -103,6 +117,9 @@ const updatePlayerState = () => {
     }
 
     player.velX *= friction;
+    if (Math.abs(player.velX) <= 0.05) {
+        player.velX = 0;
+    }
     player.velY += gravity;
 
     player.ground = false;
@@ -190,17 +207,27 @@ checkCollision = (objectA, objectB) => {
 const offsetCenterPosition = (x, xWidth) => (x - Math.floor(xWidth / 2));
 const getCenterPosition = (x, xWidth) => (x + Math.floor(xWidth / 2));
 
+currentImage = idleMainImg;
+
 // Drawing things
 const drawMain = (x, y, width, height) => {
-    if (player.ground) {
+
+    if (player.ground && player.velX === 0) {
+        currentImage = idleMainImg;
         ctx.drawImage(idleMainImg, x, y, width, height);
+    } 
+    else if (player.ground && player.velX > 0) {
+        currentImage = walk[walktick];
+        ctx.drawImage(walk[walktick], x, y, width, height);
+        walktick =(walktick + 1) % 15;
     }
     else if (player.jumping) {
+        currentImage = jumpMainImg;
         ctx.drawImage(jumpMainImg, x, y, width, height);
     }
     else {
         // default idle
-        ctx.drawImage(idleMainImg, x, y, width, height);
+        ctx.drawImage(currentImage, x, y, width, height);
     }
 }
 
