@@ -11,8 +11,6 @@ const keyActionMapping = {
     Space: "up"
 }
 
-var framecount = 0;
-
 // load pictures
 
 const idleMainImg = new Image(),
@@ -148,8 +146,6 @@ const updatePlayerState = () => {
 
     ctx.clearRect(0, 0, width, height);
     drawMain(player.x, player.y, player.width, player.height);
-    // ctx.fillStyle = "red";
-    // ctx.fillRect(player.x, player.y, player.width, player.height);
 }
 
 // Wall Functions
