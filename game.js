@@ -11,8 +11,7 @@ const keyActionMapping = {
     Space: "up"
 }
 
-// load pictures
-
+// load character pictures
 const idleMainImg = new Image(),
     jumpMainImg = new Image(),
     flipIdleMainImg = new Image(),
@@ -25,7 +24,13 @@ deadMainImg.src = 'assest/flat-boi/Dead.png';
 flipIdleMainImg.src = 'assest/flat-boi/Idle_flip.png';
 flipJumpMainImg.src = 'assest/flat-boi/Jump_flip.png';
 
+// load crate pictures
+const crateImage = new Image();
+crateImage.src = 'assest/flat-stuff/Object/Crate.png';
 
+// load background picture
+const backgroundImg = new Image();
+backgroundImg.src = 'assest/flat-stuff/BG/BG.png';
 
 let walk = [];
 let walkflip = [];
@@ -39,6 +44,7 @@ for (let i = 1; i < 16; i++) {
     walkflip[i - 1].src = 'assest/flat-boi/Walk_' + i + '_flip.png';
 }
 
+
 var canvas = document.getElementById("canvas"),
     ctx = canvas.getContext("2d"),
     width = 1000,
@@ -49,8 +55,8 @@ var canvas = document.getElementById("canvas"),
         x: width / 2,
         y: height - 100,
         width: 40,
-        height: 80,
-        speed: 4,
+        height: 65,
+        speed: 5,
         velX: 0,
         velY: 0,
         jumping: false,
@@ -64,24 +70,24 @@ var canvas = document.getElementById("canvas"),
         down: false,
     },
     friction = 0.8,
-    gravity = 0.3;
+    gravity = 0.4;
 
-var walls = [];
+var crates = [];
 
 // create frames
-walls.push({
+crates.push({
     x: 0,
     y: 0,
     width: 2,
     height: height
 });
-walls.push({
+crates.push({
     x: 0,
     y: height - 2,
     width: width,
     height: 50
 });
-walls.push({
+crates.push({
     x: width - 2,
     y: 0,
     width: 2,
@@ -91,6 +97,7 @@ walls.push({
 canvas.width = width;
 canvas.height = height;
 
+
 // Player Functions
 const updatePlayerUpAction = () => {
     if (!player.jumping && player.ground) {
@@ -98,6 +105,9 @@ const updatePlayerUpAction = () => {
         player.ground = false;
         player.velY = -player.speed * 2;
     }
+    console.log("velY: ", player.velY);
+    console.log("speed: ", player.speed);
+    
 }
 
 const updatePlayerRightAction = () => {
@@ -133,9 +143,9 @@ const updatePlayerState = () => {
     player.velY += gravity;
 
     player.ground = false;
-    for (let wall of walls) {
+    for (let crate of crates) {
         
-        var dir = checkCollision(player, wall);
+        var dir = checkCollision(player, crate);
 
         if (dir === "left" || dir === "right") {
             player.velX = 0;
@@ -157,30 +167,29 @@ const updatePlayerState = () => {
     player.y += player.velY;
 
     ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(backgroundImg, 0, 0, width, height);
     drawMain(player.x, player.y, player.width, player.height);
 }
 
-// Wall Functions
+// crate Functions
 
-const createWall = (xVal, yVal, width, height) => {
-    walls.push({
+const createcrate = (xVal, yVal, width, height) => {
+    crates.push({
         x: offsetCenterPosition(xVal, width),
         y: offsetCenterPosition(yVal, height),
         width,
         height
     });
-    console.log(walls);
 }
 
-const updateWallState = () => {
-    walls.forEach((wall) => {
-        ctx.fillStyle = "black";
-        ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+const drawcrates = () => {
+    crates.forEach((crate) => {
+        ctx.drawImage(crateImage, crate.x, crate.y, crate.width, crate.height);
     })
 }
 
 // Util
-checkCollision = (objectA, objectB) => {
+const checkCollision = (objectA, objectB) => {
 
     let xDiff = getCenterPosition(objectA.x, objectA.width) - getCenterPosition(objectB.x, objectB.width),
         yDiff = getCenterPosition(objectA.y, objectA.height) - getCenterPosition(objectB.y, objectB.height),
@@ -215,7 +224,7 @@ checkCollision = (objectA, objectB) => {
 const offsetCenterPosition = (x, xWidth) => (x - Math.floor(xWidth / 2));
 const getCenterPosition = (x, xWidth) => (x + Math.floor(xWidth / 2));
 
-currentImage = idleMainImg;
+let currentImage = idleMainImg;
 
 // Drawing things
 const drawMain = (x, y, width, height) => {
@@ -236,9 +245,10 @@ const drawMain = (x, y, width, height) => {
     else if (player.ground && Math.abs(player.velX) > 0) {
         currentImage = walkpointer[walktick];
         ctx.drawImage(walkpointer[walktick], x, y, width, height);
-        walktick =(walktick + 1) % 15;
+        walktick = (walktick + 1) % 15;
     }
     else if (player.jumping) {
+        console.log(player);
         currentImage = jumppointer;
         ctx.drawImage(jumppointer, x, y, width + 5, height);
     }
@@ -248,16 +258,19 @@ const drawMain = (x, y, width, height) => {
     }
 }
 
+let gameReset = false;
 
 // main update
 const update = () => {
+    if (gameReset) {
+        return null;
+    }
     updatePlayerState();
-    updateWallState();
+    drawcrates();
     requestAnimationFrame(update);
 }
 
-// event listeners
-
+    // event listeners
 document.body.addEventListener("keydown", (e) => {
     keys[keyActionMapping[e.code]] = true;
 });
@@ -267,9 +280,43 @@ document.body.addEventListener("keyup", (e) => {
 });
 
 document.body.addEventListener("click", (e) => {
-    createWall(e.pageX - leftFrameOffset, e.pageY - topFrameOffset, 25, 25);
+    createcrate(e.pageX - leftFrameOffset, e.pageY - topFrameOffset, 40, 40);
 });
 
-window.addEventListener("load", function () {
-    update();
-});
+// update();
+
+// reset functions
+// reset everything, including crates created and character's position
+const resetGame = () => {
+    gameReset = true;
+    player.x = width / 2;
+    player.y = height - 100;
+    player.velX = 0;
+    player.velY = 0;
+    player.jumping = false;
+    player.ground = false;
+    player.facing = "right";
+
+    crates = [];
+    // create frames
+    crates.push({
+        x: 0,
+        y: 0,
+        width: 2,
+        height: height
+    });
+    crates.push({
+        x: 0,
+        y: height - 2,
+        width: width,
+        height: 50
+    });
+    crates.push({
+        x: width - 2,
+        y: 0,
+        width: 2,
+        height: height
+    });
+    gameReset = false;
+    requestAnimationFrame(update);
+}
